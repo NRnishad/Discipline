@@ -1,6 +1,34 @@
 import { Download, RotateCcw, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 
+const themeOptions = [
+  { value: "dark", label: "Dark" },
+  { value: "graphite", label: "Graphite" },
+  { value: "forest", label: "Forest" },
+  { value: "ember", label: "Ember" },
+  { value: "midnight", label: "Midnight" },
+];
+
+const colorThemeOptions = [
+  { value: "discipline", label: "Discipline" },
+  { value: "dracula", label: "Dracula" },
+  { value: "nord", label: "Nord" },
+  { value: "gruvbox", label: "Gruvbox" },
+  { value: "monokai", label: "Monokai" },
+  { value: "solarized", label: "Solarized Dark" },
+  { value: "catppuccin", label: "Catppuccin" },
+];
+
+const animationOptions = [
+  { value: "off", label: "Off" },
+  { value: "subtle", label: "Subtle" },
+  { value: "lively", label: "Lively" },
+  { value: "slide", label: "Slide" },
+  { value: "pop", label: "Pop" },
+  { value: "flow", label: "Flow" },
+  { value: "pulse", label: "Pulse" },
+];
+
 export function SettingsPanel({ settings, onSave, onExport, onReset }) {
   const [form, setForm] = useState(settings);
 
@@ -15,14 +43,12 @@ export function SettingsPanel({ settings, onSave, onExport, onReset }) {
   function submit(event) {
     event.preventDefault();
     onSave({
-      ...form,
+      appName: form.appName || "Discipline OS",
       dailyMaxEntertainmentMinutes: Number(form.dailyMaxEntertainmentMinutes) || 0,
       startingBalanceMinutes: Number(form.startingBalanceMinutes) || 0,
-      pushupCreditValue: Number(form.pushupCreditValue) || 0,
-      pullupCreditValue: Number(form.pullupCreditValue) || 0,
-      handGripCreditValue: Number(form.handGripCreditValue) || 0,
-      studySessionLength: Number(form.studySessionLength) || 1,
-      studyReward: Number(form.studyReward) || 0,
+      theme: form.theme || "dark",
+      colorTheme: form.colorTheme || "discipline",
+      animationLevel: form.animationLevel || "subtle",
     });
   }
 
@@ -58,57 +84,42 @@ export function SettingsPanel({ settings, onSave, onExport, onReset }) {
             />
           </label>
           <label className="label">
-            Push-up credit
-            <input
-              type="number"
-              step="0.1"
-              value={form.pushupCreditValue}
-              onChange={(event) => updateField("pushupCreditValue", event.target.value)}
-              className="field mt-2"
-            />
+            Layout theme
+            <select value={form.theme || "dark"} onChange={(event) => updateField("theme", event.target.value)} className="field mt-2">
+              {themeOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
           </label>
           <label className="label">
-            Pull-up credit
-            <input
-              type="number"
-              step="0.1"
-              value={form.pullupCreditValue}
-              onChange={(event) => updateField("pullupCreditValue", event.target.value)}
+            Colour theme
+            <select
+              value={form.colorTheme || "discipline"}
+              onChange={(event) => updateField("colorTheme", event.target.value)}
               className="field mt-2"
-            />
+            >
+              {colorThemeOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
           </label>
+          <div className={`colour-preview color-${form.colorTheme || "discipline"} md:col-span-2`} aria-hidden="true">
+            <span />
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
           <label className="label">
-            Hand-grip credit
-            <input
-              type="number"
-              step="0.1"
-              value={form.handGripCreditValue}
-              onChange={(event) => updateField("handGripCreditValue", event.target.value)}
+            Animations
+            <select
+              value={form.animationLevel || "subtle"}
+              onChange={(event) => updateField("animationLevel", event.target.value)}
               className="field mt-2"
-            />
-          </label>
-          <label className="label">
-            Study session length
-            <input
-              type="number"
-              value={form.studySessionLength}
-              onChange={(event) => updateField("studySessionLength", event.target.value)}
-              className="field mt-2"
-            />
-          </label>
-          <label className="label">
-            Study reward
-            <input
-              type="number"
-              value={form.studyReward}
-              onChange={(event) => updateField("studyReward", event.target.value)}
-              className="field mt-2"
-            />
-          </label>
-          <label className="label">
-            Theme
-            <select value={form.theme} onChange={(event) => updateField("theme", event.target.value)} className="field mt-2">
-              <option value="dark">Dark</option>
+            >
+              {animationOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </select>
           </label>
         </div>

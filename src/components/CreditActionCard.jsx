@@ -1,8 +1,8 @@
-import { Minus, Plus } from "lucide-react";
+import { Minus, Pencil, Plus, Trash2 } from "lucide-react";
 import { calculateEntryCredits } from "../lib/calculations";
 import { clampNumber, formatMinutes } from "../lib/dateUtils";
 
-export function CreditActionCard({ rule, quantity, onSetQuantity, onAdjust }) {
+export function CreditActionCard({ rule, quantity, onSetQuantity, onAdjust, onEdit, onDelete }) {
   const preview = calculateEntryCredits({ quantity }, rule);
   const step = rule.unit === "minute" ? 5 : 1;
 
@@ -17,9 +17,21 @@ export function CreditActionCard({ rule, quantity, onSetQuantity, onAdjust }) {
               : `${formatMinutes(rule.creditValue)} per ${rule.unit}`}
           </p>
         </div>
-        <span className={rule.active ? "status-on" : "status-off"}>
-          {rule.active ? "Active" : "Inactive"}
-        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className={rule.active ? "status-on" : "status-off"}>
+            {rule.active ? "Active" : "Inactive"}
+          </span>
+          {onEdit ? (
+            <button type="button" className="icon-button" onClick={() => onEdit(rule)} aria-label={`Edit ${rule.name}`} title="Edit">
+              <Pencil size={15} />
+            </button>
+          ) : null}
+          {onDelete ? (
+            <button type="button" className="icon-button danger-icon" onClick={() => onDelete(rule.id)} aria-label={`Delete ${rule.name}`} title="Delete">
+              <Trash2 size={15} />
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <div className="mt-4 flex items-center gap-2">

@@ -1,4 +1,7 @@
+import { PlusCircle } from "lucide-react";
+import { useState } from "react";
 import { CreditActionCard } from "../components/CreditActionCard";
+import { EarningActionForm } from "../components/EarningActionForm";
 import { SpendingCard } from "../components/SpendingCard";
 import { TimerCard } from "../components/TimerCard";
 import { TodayHabits } from "../components/TodayHabits";
@@ -13,13 +16,38 @@ export function Today({
   onAddSpending,
   onStartTimer,
   onStopTimer,
+  onSaveRule,
+  onDeleteRule,
 }) {
+  const [showActionForm, setShowActionForm] = useState(false);
+  const [editingAction, setEditingAction] = useState(null);
   const earningRules = appState.creditRules.filter((rule) => rule.type === "earn");
   const spendingRules = appState.creditRules.filter((rule) => rule.type === "spend");
   const habits = appState.dueTasks.filter((task) => task.type === "habit");
   const spendingByCategory = Object.fromEntries(
     spendingRules.map((rule) => [rule.name, getQuantityByCategory(appState.todayLog, rule.name)])
   );
+
+  function openAddAction() {
+    setEditingAction(null);
+    setShowActionForm(true);
+  }
+
+  function openEditAction(rule) {
+    setEditingAction(rule);
+    setShowActionForm(true);
+  }
+
+  function saveAction(action) {
+    onSaveRule(action);
+    setEditingAction(null);
+    setShowActionForm(false);
+  }
+
+  function closeActionForm() {
+    setEditingAction(null);
+    setShowActionForm(false);
+  }
 
   return (
     <div className="page-stack">
@@ -47,7 +75,18 @@ export function Today({
             <h2>Credit Actions</h2>
             <p>Quantity-based earning entries</p>
           </div>
+          <button type="button" onClick={openAddAction} className="secondary-button">
+            <PlusCircle size={17} />
+            Add action
+          </button>
         </div>
+        {showActionForm ? (
+          <EarningActionForm
+            editingAction={editingAction}
+            onSave={saveAction}
+            onCancel={closeActionForm}
+          />
+        ) : null}
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {earningRules.map((rule) => (
             <CreditActionCard
@@ -56,6 +95,8 @@ export function Today({
               quantity={getQuantityForRule(appState.todayLog, rule.id)}
               onSetQuantity={onSetRuleQuantity}
               onAdjust={onAdjustRuleQuantity}
+              onEdit={openEditAction}
+              onDelete={onDeleteRule}
             />
           ))}
         </div>

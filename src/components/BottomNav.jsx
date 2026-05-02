@@ -19,7 +19,7 @@ const navItems = [
 
 export function BottomNav({ currentPage, onNavigate }) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-surface-950/95 px-2 py-2 backdrop-blur lg:hidden">
+    <nav className="bottom-nav fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-surface-950/95 px-2 py-2 backdrop-blur lg:hidden">
       <div className="grid grid-cols-6 gap-1">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -50,14 +50,14 @@ export function BottomNav({ currentPage, onNavigate }) {
 
 export function SidebarNav({ currentPage, onNavigate, appName, userEmail, onLogout }) {
   return (
-    <aside className="hidden min-h-screen w-72 shrink-0 border-r border-white/10 bg-surface-950/80 p-5 lg:block">
-      <div className="flex min-h-[calc(100vh-2.5rem)] flex-col">
-        <div className="mb-8">
+    <aside className="side-nav hidden min-h-screen w-72 shrink-0 border-r border-white/10 bg-surface-950/80 p-5 lg:block">
+      <div className="side-nav-inner flex min-h-[calc(100vh-2.5rem)] flex-col">
+        <div className="side-nav-brand mb-8">
           <p className="text-sm uppercase tracking-[0.24em] text-accent-400">Personal OS</p>
           <h1 className="mt-2 text-2xl font-semibold text-white">{appName}</h1>
         </div>
 
-        <nav className="space-y-2">
+        <nav className="side-nav-list space-y-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = currentPage === item.id;
@@ -80,7 +80,7 @@ export function SidebarNav({ currentPage, onNavigate, appName, userEmail, onLogo
           })}
         </nav>
 
-        <div className="mt-auto rounded-lg border border-white/10 bg-white/5 p-3">
+        <div className="side-nav-account mt-auto rounded-lg border border-white/10 bg-white/5 p-3">
           <p className="truncate text-sm font-medium text-white">{userEmail}</p>
           <button type="button" onClick={onLogout} className="secondary-button mt-3 w-full">
             <LogOut size={16} />

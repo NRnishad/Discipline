@@ -23,6 +23,7 @@ import {
   loadCreditRules,
   loadDailyLogs,
   loadSettings,
+  normalizeSettings,
   loadTaskCompletions,
   loadTasks,
   loadTimerSessions,
@@ -210,7 +211,7 @@ export default function App() {
         if (cancelled) return;
 
         if (cloudData) {
-          setSettings({ ...defaultSettings, ...(cloudData.settings || {}) });
+          setSettings(normalizeSettings(cloudData.settings));
           setCreditRules(Array.isArray(cloudData.creditRules) && cloudData.creditRules.length
             ? cloudData.creditRules
             : defaultCreditRules);
@@ -436,20 +437,7 @@ export default function App() {
   }
 
   function saveAppSettings(nextSettings) {
-    setSettings(nextSettings);
-    setCreditRules((current) => current.map((rule) => {
-      if (rule.id === "rule_pushup") return { ...rule, creditValue: nextSettings.pushupCreditValue };
-      if (rule.id === "rule_pullup") return { ...rule, creditValue: nextSettings.pullupCreditValue };
-      if (rule.id === "rule_hand_grip") return { ...rule, creditValue: nextSettings.handGripCreditValue };
-      if (rule.id === "rule_study") {
-        return {
-          ...rule,
-          creditValue: nextSettings.studyReward,
-          thresholdQuantity: nextSettings.studySessionLength,
-        };
-      }
-      return rule;
-    }));
+    setSettings(normalizeSettings(nextSettings));
   }
 
   function exportData() {
@@ -525,8 +513,8 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-950 text-slate-100">
-      <div className="flex min-h-screen">
+    <div className={`app-root theme-${settings.theme || "dark"} color-${settings.colorTheme || "discipline"} motion-${settings.animationLevel || "subtle"} min-h-screen bg-surface-950 text-slate-100`}>
+      <div className="app-shell flex min-h-screen">
         <SidebarNav
           currentPage={currentPage}
           onNavigate={setCurrentPage}
@@ -534,9 +522,9 @@ export default function App() {
           userEmail={authUser.email}
           onLogout={handleLogout}
         />
-        <main className="min-w-0 flex-1 px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-surface-850 p-3 lg:hidden">
+        <main className="main-shell min-w-0 flex-1 px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-8">
+          <div className="content-shell mx-auto max-w-7xl">
+            <div className="mobile-user-bar mb-4 flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-surface-850 p-3 lg:hidden">
               <p className="min-w-0 truncate text-sm text-slate-300">{authUser.email}</p>
               <button type="button" onClick={handleLogout} className="secondary-button shrink-0">
                 Sign out

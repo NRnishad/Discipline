@@ -32,12 +32,34 @@ function writeJson(key, value) {
   window.localStorage.setItem(key, JSON.stringify(value));
 }
 
+function numberOrFallback(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+export function normalizeSettings(settings = {}) {
+  return {
+    appName: settings.appName || defaultSettings.appName,
+    dailyMaxEntertainmentMinutes: numberOrFallback(
+      settings.dailyMaxEntertainmentMinutes,
+      defaultSettings.dailyMaxEntertainmentMinutes
+    ),
+    startingBalanceMinutes: numberOrFallback(
+      settings.startingBalanceMinutes,
+      defaultSettings.startingBalanceMinutes
+    ),
+    theme: settings.theme || defaultSettings.theme,
+    colorTheme: settings.colorTheme || defaultSettings.colorTheme,
+    animationLevel: settings.animationLevel || defaultSettings.animationLevel,
+  };
+}
+
 export function loadSettings() {
-  return { ...defaultSettings, ...readJson(STORAGE_KEYS.settings, defaultSettings) };
+  return normalizeSettings(readJson(STORAGE_KEYS.settings, defaultSettings));
 }
 
 export function saveSettings(settings) {
-  writeJson(STORAGE_KEYS.settings, settings);
+  writeJson(STORAGE_KEYS.settings, normalizeSettings(settings));
 }
 
 export function loadCreditRules() {

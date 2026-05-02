@@ -5,30 +5,30 @@ export default {
     extend: {
       colors: {
         surface: {
-          950: "#08090c",
-          900: "#0d0f14",
-          850: "#12151b",
-          800: "#171b22",
-          700: "#232935",
+          950: "rgb(var(--color-surface-950) / <alpha-value>)",
+          900: "rgb(var(--color-surface-900) / <alpha-value>)",
+          850: "rgb(var(--color-surface-850) / <alpha-value>)",
+          800: "rgb(var(--color-surface-800) / <alpha-value>)",
+          700: "rgb(var(--color-surface-700) / <alpha-value>)",
         },
         accent: {
-          300: "#7dd3fc",
-          400: "#38bdf8",
-          500: "#0ea5e9",
-          600: "#0284c7",
+          300: "rgb(var(--color-accent-300) / <alpha-value>)",
+          400: "rgb(var(--color-accent-400) / <alpha-value>)",
+          500: "rgb(var(--color-accent-500) / <alpha-value>)",
+          600: "rgb(var(--color-accent-600) / <alpha-value>)",
         },
         resolve: {
-          300: "#6ee7b7",
-          400: "#34d399",
-          500: "#10b981",
+          300: "rgb(var(--color-resolve-300) / <alpha-value>)",
+          400: "rgb(var(--color-resolve-400) / <alpha-value>)",
+          500: "rgb(var(--color-resolve-500) / <alpha-value>)",
         },
         caution: {
-          400: "#fbbf24",
-          500: "#f59e0b",
+          400: "rgb(var(--color-caution-400) / <alpha-value>)",
+          500: "rgb(var(--color-caution-500) / <alpha-value>)",
         },
         danger: {
-          400: "#fb7185",
-          500: "#f43f5e",
+          400: "rgb(var(--color-danger-400) / <alpha-value>)",
+          500: "rgb(var(--color-danger-500) / <alpha-value>)",
         },
       },
       boxShadow: {
