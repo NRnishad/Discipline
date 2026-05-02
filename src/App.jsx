@@ -6,6 +6,7 @@ import { Tasks } from "./pages/Tasks";
 import { Analytics } from "./pages/Analytics";
 import { Settings } from "./pages/Settings";
 import { BottomNav, SidebarNav } from "./components/BottomNav";
+import { Login } from "./pages/Login";
 import {
   calculateAnalytics,
   calculateAvailableBalance,
@@ -19,7 +20,6 @@ import {
 } from "./lib/calculations";
 import { createId, getTodayKey, toDateKey } from "./lib/dateUtils";
 import {
-  exportAllData,
   loadCreditRules,
   loadDailyLogs,
   loadSettings,
@@ -38,6 +38,8 @@ import { getTasksForDate, isPerfectDay, isTaskCompleted, upsertTaskCompletion } 
 import { defaultCreditRules } from "./data/defaultCreditRules";
 import { defaultSettings } from "./data/defaultSettings";
 import { defaultTasks } from "./data/defaultTasks";
+import { listenToAuthState, loginWithEmailPassword, logoutUser } from "./lib/auth";
+import { loadDisciplineData, saveDisciplineData } from "./lib/cloudStorage";
 
 const pages = {
   dashboard: Dashboard,
@@ -64,8 +66,23 @@ function normalizeQuantity(value) {
   return Math.max(0, quantity);
 }
 
+function LoadingScreen({ message }) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-surface-950 px-4 text-slate-100">
+      <section className="rounded-lg border border-white/10 bg-surface-850 p-6 text-center shadow-soft">
+        <p className="eyebrow">Discipline OS</p>
+        <h1 className="text-2xl font-semibold text-white">{message}</h1>
+      </section>
+    </main>
+  );
+}
+
 export default function App() {
   const [currentPage, setCurrentPage] = useState("dashboard");
+  const [authUser, setAuthUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [cloudReady, setCloudReady] = useState(false);
+  const [cloudError, setCloudError] = useState("");
   const [settings, setSettings] = useState(() => loadSettings());
   const [creditRules, setCreditRules] = useState(() => loadCreditRules());
   const [dailyLogs, setDailyLogs] = useState(() => loadDailyLogs());
@@ -152,6 +169,25 @@ export default function App() {
     () => timerSessions.find((session) => session.status === "active"),
     [timerSessions]
   );
+  const disciplineData = useMemo(() => ({
+    schemaVersion: 1,
+    settings,
+    creditRules,
+    dailyLogs,
+    tasks,
+    taskCompletions,
+    timerSessions,
+  }), [settings, creditRules, dailyLogs, tasks, taskCompletions, timerSessions]);
+
+  useEffect(() => {
+    return listenToAuthState((user) => {
+      setAuthUser(user);
+      setAuthLoading(false);
+      if (!user) {
+        setCloudReady(false);
+      }
+    });
+  }, []);
 
   useEffect(() => saveSettings(settings), [settings]);
   useEffect(() => saveCreditRules(creditRules), [creditRules]);
@@ -159,6 +195,70 @@ export default function App() {
   useEffect(() => saveTasks(tasks), [tasks]);
   useEffect(() => saveTaskCompletions(taskCompletions), [taskCompletions]);
   useEffect(() => saveTimerSessions(timerSessions), [timerSessions]);
+
+  useEffect(() => {
+    if (authLoading || !authUser) return undefined;
+
+    let cancelled = false;
+
+    async function loadCloudState() {
+      setCloudReady(false);
+      setCloudError("");
+
+      try {
+        const cloudData = await loadDisciplineData(authUser.uid);
+        if (cancelled) return;
+
+        if (cloudData) {
+          setSettings({ ...defaultSettings, ...(cloudData.settings || {}) });
+          setCreditRules(Array.isArray(cloudData.creditRules) && cloudData.creditRules.length
+            ? cloudData.creditRules
+            : defaultCreditRules);
+          setDailyLogs(Array.isArray(cloudData.dailyLogs) ? cloudData.dailyLogs : []);
+          setTasks(Array.isArray(cloudData.tasks) && cloudData.tasks.length ? cloudData.tasks : defaultTasks);
+          setTaskCompletions(Array.isArray(cloudData.taskCompletions) ? cloudData.taskCompletions : []);
+          setTimerSessions(Array.isArray(cloudData.timerSessions) ? cloudData.timerSessions : []);
+        } else {
+          await saveDisciplineData(authUser.uid, {
+            schemaVersion: 1,
+            settings,
+            creditRules,
+            dailyLogs,
+            tasks,
+            taskCompletions,
+            timerSessions,
+          });
+        }
+
+        if (!cancelled) {
+          setCloudReady(true);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setCloudError(error.message || "Could not load Firebase data.");
+          setCloudReady(true);
+        }
+      }
+    }
+
+    loadCloudState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, authUser?.uid]);
+
+  useEffect(() => {
+    if (!authUser || !cloudReady) return undefined;
+
+    const handle = window.setTimeout(() => {
+      saveDisciplineData(authUser.uid, disciplineData).catch((error) => {
+        setCloudError(error.message || "Could not save Firebase data.");
+      });
+    }, 600);
+
+    return () => window.clearTimeout(handle);
+  }, [authUser, cloudReady, disciplineData]);
 
   function updateLog(date, updater) {
     setDailyLogs((currentLogs) => {
@@ -353,7 +453,14 @@ export default function App() {
   }
 
   function exportData() {
-    const payload = exportAllData();
+    const payload = {
+      ...disciplineData,
+      firebaseUser: authUser ? {
+        uid: authUser.uid,
+        email: authUser.email,
+      } : null,
+      exportedAt: new Date().toISOString(),
+    };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -374,6 +481,11 @@ export default function App() {
     setTasks(defaultTasks);
     setTaskCompletions([]);
     setTimerSessions([]);
+    setCurrentPage("dashboard");
+  }
+
+  async function handleLogout() {
+    await logoutUser();
     setCurrentPage("dashboard");
   }
 
@@ -400,12 +512,43 @@ export default function App() {
 
   const CurrentPage = pages[currentPage] || Dashboard;
 
+  if (authLoading) {
+    return <LoadingScreen message="Checking Firebase session..." />;
+  }
+
+  if (!authUser) {
+    return <Login onLogin={loginWithEmailPassword} />;
+  }
+
+  if (!cloudReady) {
+    return <LoadingScreen message="Loading your Discipline OS data..." />;
+  }
+
   return (
     <div className="min-h-screen bg-surface-950 text-slate-100">
       <div className="flex min-h-screen">
-        <SidebarNav currentPage={currentPage} onNavigate={setCurrentPage} appName={settings.appName} />
+        <SidebarNav
+          currentPage={currentPage}
+          onNavigate={setCurrentPage}
+          appName={settings.appName}
+          userEmail={authUser.email}
+          onLogout={handleLogout}
+        />
         <main className="min-w-0 flex-1 px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-8">
           <div className="mx-auto max-w-7xl">
+            <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-surface-850 p-3 lg:hidden">
+              <p className="min-w-0 truncate text-sm text-slate-300">{authUser.email}</p>
+              <button type="button" onClick={handleLogout} className="secondary-button shrink-0">
+                Sign out
+              </button>
+            </div>
+
+            {cloudError ? (
+              <div className="mb-4 rounded-lg border border-caution-500/30 bg-caution-500/10 px-4 py-3 text-sm text-caution-400">
+                Firebase sync warning: {cloudError}
+              </div>
+            ) : null}
+
             <CurrentPage
               appState={appState}
               onNavigate={setCurrentPage}
