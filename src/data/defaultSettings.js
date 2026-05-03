@@ -6,3 +6,4 @@ export const defaultSettings = {
   colorTheme: "discipline",
   animationLevel: "subtle",
 };
+ 
